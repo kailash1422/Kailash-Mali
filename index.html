@@ -37,6 +37,13 @@
   * License: https://bootstrapmade.com/license/
   ======================================================== -->
 
+  <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script type="text/javascript">
+    (function () {
+      emailjs.init("_8k8adgGZIkus1RA1"); // Replace with your actual public key
+    })();
+  </script>
+
 </head>
 
 <body class="index-page">
@@ -840,44 +847,24 @@
         </section>
 
 
+
+
         <script>
           document.getElementById("contactForm").addEventListener("submit", function (e) {
             e.preventDefault();
 
-            const form = e.target;
-            const data = new FormData(form);
+            const form = this;
 
-            fetch("https://formsubmit.co/ajax/malikailash878@gmail.com", {
-              method: "POST",
-              headers: {
-                'Accept': 'application/json'
-              },
-              body: data
-            })
-              .then(response => {
-                return response.json().then(json => ({
-                  ok: response.ok,
-                  status: response.status,
-                  json
-                }));
-              })
-              .then(({ ok, status, json }) => {
-                console.log("FormSubmit response:", json);
-
-                if (ok && json.message && json.message.toLowerCase().includes("success")) {
-                  document.getElementById("formStatus").style.display = "block";
-                  form.reset();
-                } else {
-                  alert("Form submission failed.\n\nResponse: " + JSON.stringify(json));
-                }
-              })
-              .catch((error) => {
-                console.error("Error:", error);
-                alert("There was a problem submitting your form.");
+            emailjs.sendForm('service_lac32ag', 'template_fyvz2m4', form)
+              .then(function () {
+                document.getElementById("formStatus").style.display = "block";
+                form.reset();
+              }, function (error) {
+                console.error("FAILED...", error);
+                alert("There was an error sending the message. Please try again later.");
               });
           });
         </script>
-
 
 
       </div>
