@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Memory Match Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 80px);
+      gap: 10px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+
+    .card {
+      width: 80px;
+      height: 80px;
+      background-color: #333;
+      color: #333;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .card.flipped,
+    .card.matched {
+      background-color: #fff;
+      color: #000;
+      cursor: default;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007BFF;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>🧠 Memory Match Game</h2>
+  <p id="moves">Moves: 0</p>
+  <p id="turn">🎮 Current Turn: <strong>User 1</strong></p>
+  <p id="score">🏆 Scores — User 1: 0 | User 2: 0</p>
+
+  <div class="grid" id="card-grid"></div>
+  <button onclick="resetGame()">🔄 Reset Game</button>
+
+  <script>
+    const cardValues = [
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'
+    ];
+
+    let cards = [];
+    let firstCard = null;
+    let secondCard = null;
+    let moves = 0;
+    let lockBoard = false;
+    let currentPlayer = 1;
+    let scores = { 1: 0, 2: 0 };
+
+    function shuffle(array) {
+      return [...array].sort(() => Math.random() - 0.5);
+    }
+
+    function createCardElements() {
+      const grid = document.getElementById("card-grid");
+      grid.innerHTML = "";
+      cards.forEach((card, index) => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.dataset.id = index;
+        div.textContent = card.flipped || card.matched ? card.value : "?";
+        if (card.flipped) div.classList.add("flipped");
+        if (card.matched) div.classList.add("matched");
+
+        div.onclick = () => handleCardClick(index);
+        grid.appendChild(div);
+      });
+    }
+
+    function handleCardClick(index) {
+      if (lockBoard || cards[index].flipped || cards[index].matched) return;
+
+      cards[index].flipped = true;
+      createCardElements();
+
+      if (!firstCard) {
+        firstCard = { ...cards[index], index };
+      } else {
+        secondCard = { ...cards[index], index };
+        lockBoard = true;
+        moves++;
+        updateStats();
+
+        if (firstCard.value === secondCard.value) {
+          cards[firstCard.index].matched = true;
+          cards[secondCard.index].matched = true;
+          scores[currentPlayer]++;
+          setTimeout(resetFlips, 500);
+        } else {
+          setTimeout(() => {
+            cards[firstCard.index].flipped = false;
+            cards[secondCard.index].flipped = false;
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            resetFlips();
+          }, 1000);
+        }
+      }
+    }
+
+    function resetFlips() {
+      firstCard = null;
+      secondCard = null;
+      lockBoard = false;
+      createCardElements();
+      updateStats();
+    }
+
+    function updateStats() {
+      document.getElementById("moves").textContent = `Moves: ${moves}`;
+      document.getElementById("turn").innerHTML = `🎮 Current Turn: <strong>User ${currentPlayer}</strong>`;
+      document.getElementById("score").textContent = `🏆 Scores — User 1: ${scores[1]} | User 2: ${scores[2]}`;
+    }
+
+    function resetGame() {
+      cards = shuffle(cardValues).map(val => ({
+        value: val,
+        flipped: false,
+        matched: false
+      }));
+      firstCard = null;
+      secondCard = null;
+      moves = 0;
+      lockBoard = false;
+      currentPlayer = 1;
+      scores = { 1: 0, 2: 0 };
+      createCardElements();
+      updateStats();
+    }
+
+    // Initialize game
+    resetGame();
+  </script>
+
+</body>
+
+</html>
