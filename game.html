@@ -3,34 +3,58 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Memory Match Game</title>
   <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      color: #333;
       text-align: center;
-      margin-top: 40px;
+      padding: 20px;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      color: #007BFF;
+    }
+
+    .description {
+      max-width: 500px;
+      margin: 0 auto 20px;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #555;
+    }
+
+    .stats {
+      margin: 10px 0;
+      font-size: 1rem;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(4, 80px);
       gap: 10px;
-      justify-content: center;
       margin: 20px auto;
+      justify-content: center;
     }
 
     .card {
-      width: 80px;
-      height: 80px;
+      width: 100%;
+      padding-top: 100%;
+      position: relative;
       background-color: #333;
       color: #333;
-      font-size: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      font-size: 1.5rem;
       border-radius: 8px;
       cursor: pointer;
-      transition: 0.3s;
+      transition: transform 0.3s ease;
     }
 
     .card.flipped,
@@ -38,17 +62,49 @@
       background-color: #fff;
       color: #000;
       cursor: default;
+      transform: scale(1.03);
+    }
+
+    .card>span {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
 
     button {
       margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 16px;
+      padding: 12px 24px;
+      font-size: 1rem;
       background-color: #007BFF;
       color: #fff;
       border: none;
       border-radius: 6px;
       cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #005bb5;
+    }
+
+    /* Responsive grid */
+    @media (min-width: 600px) {
+      .grid {
+        grid-template-columns: repeat(4, 80px);
+        width: max-content;
+      }
+
+      .card {
+        font-size: 24px;
+      }
+    }
+
+    @media (max-width: 599px) {
+      .grid {
+        grid-template-columns: repeat(4, calc(25vw - 10px));
+        width: calc(100vw - 40px);
+      }
     }
   </style>
 </head>
@@ -56,11 +112,20 @@
 <body>
 
   <h2>🧠 Memory Match Game</h2>
-  <p id="moves">Moves: 0</p>
-  <p id="turn">🎮 Current Turn: <strong>User 1</strong></p>
-  <p id="score">🏆 Scores — User 1: 0 | User 2: 0</p>
+  <p class="description">
+    Welcome to the Memory Match Game, a fun and challenging two-player memory-based card game.
+    Flip and match identical cards. The player with the most matches wins. <br><strong>Developed by Kailash
+      Mali</strong>.
+  </p>
+
+  <div class="stats">
+    <p id="moves">Moves: 0</p>
+    <p id="turn">🎮 Current Turn: <strong>User 1</strong></p>
+    <p id="score">🏆 Scores — User 1: 0 | User 2: 0</p>
+  </div>
 
   <div class="grid" id="card-grid"></div>
+
   <button onclick="resetGame()">🔄 Reset Game</button>
 
   <script>
@@ -68,99 +133,72 @@
       'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
       'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'
     ];
-
-    let cards = [];
-    let firstCard = null;
-    let secondCard = null;
-    let moves = 0;
-    let lockBoard = false;
-    let currentPlayer = 1;
+    let cards = [], first = null, second = null;
+    let moves = 0, lock = false, player = 1;
     let scores = { 1: 0, 2: 0 };
 
-    function shuffle(array) {
-      return [...array].sort(() => Math.random() - 0.5);
-    }
+    const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
 
-    function createCardElements() {
-      const grid = document.getElementById("card-grid");
-      grid.innerHTML = "";
-      cards.forEach((card, index) => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.dataset.id = index;
-        div.textContent = card.flipped || card.matched ? card.value : "?";
-        if (card.flipped) div.classList.add("flipped");
-        if (card.matched) div.classList.add("matched");
-
-        div.onclick = () => handleCardClick(index);
+    function render() {
+      const grid = document.getElementById('card-grid');
+      grid.innerHTML = '';
+      cards.forEach((c, i) => {
+        const div = document.createElement('div');
+        div.className = 'card' + (c.flipped ? ' flipped' : '') + (c.matched ? ' matched' : '');
+        div.onclick = () => flip(i);
+        const span = document.createElement('span');
+        span.textContent = c.flipped || c.matched ? c.value : '?';
+        div.appendChild(span);
         grid.appendChild(div);
       });
+      document.getElementById('moves').textContent = `Moves: ${moves}`;
+      document.getElementById('turn').innerHTML = `🎮 Current Turn: <strong>User ${player}</strong>`;
+      document.getElementById('score').textContent = `🏆 Scores — User 1: ${scores[1]} | User 2: ${scores[2]}`;
     }
 
-    function handleCardClick(index) {
-      if (lockBoard || cards[index].flipped || cards[index].matched) return;
+    function flip(i) {
+      if (lock || cards[i].flipped || cards[i].matched) return;
+      cards[i].flipped = true; render();
 
-      cards[index].flipped = true;
-      createCardElements();
-
-      if (!firstCard) {
-        firstCard = { ...cards[index], index };
+      if (!first) {
+        first = { ...cards[i], idx: i };
       } else {
-        secondCard = { ...cards[index], index };
-        lockBoard = true;
+        second = { ...cards[i], idx: i };
+        lock = true;
         moves++;
-        updateStats();
-
-        if (firstCard.value === secondCard.value) {
-          cards[firstCard.index].matched = true;
-          cards[secondCard.index].matched = true;
-          scores[currentPlayer]++;
-          setTimeout(resetFlips, 500);
+        if (first.value === second.value) {
+          cards[first.idx].matched = cards[second.idx].matched = true;
+          scores[player]++;
+          setTimeout(clearFlips, 500);
         } else {
           setTimeout(() => {
-            cards[firstCard.index].flipped = false;
-            cards[secondCard.index].flipped = false;
-            currentPlayer = currentPlayer === 1 ? 2 : 1;
-            resetFlips();
+            cards[first.idx].flipped = cards[second.idx].flipped = false;
+            player = player === 1 ? 2 : 1;
+            clearFlips();
           }, 1000);
         }
       }
     }
 
-    function resetFlips() {
-      firstCard = null;
-      secondCard = null;
-      lockBoard = false;
-      createCardElements();
-      updateStats();
-    }
-
-    function updateStats() {
-      document.getElementById("moves").textContent = `Moves: ${moves}`;
-      document.getElementById("turn").innerHTML = `🎮 Current Turn: <strong>User ${currentPlayer}</strong>`;
-      document.getElementById("score").textContent = `🏆 Scores — User 1: ${scores[1]} | User 2: ${scores[2]}`;
+    function clearFlips() {
+      first = second = null;
+      lock = false;
+      render();
     }
 
     function resetGame() {
-      cards = shuffle(cardValues).map(val => ({
-        value: val,
-        flipped: false,
-        matched: false
+      cards = shuffle(cardValues).map(v => ({
+        value: v, flipped: false, matched: false
       }));
-      firstCard = null;
-      secondCard = null;
-      moves = 0;
-      lockBoard = false;
-      currentPlayer = 1;
+      moves = 0; player = 1;
       scores = { 1: 0, 2: 0 };
-      createCardElements();
-      updateStats();
+      first = second = null;
+      lock = false;
+      render();
     }
 
-    // Initialize game
     resetGame();
   </script>
-
 </body>
 
 </html>
