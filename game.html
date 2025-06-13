@@ -186,6 +186,20 @@
       first = second = null;
       lock = false;
       render();
+
+      // Check if all cards are matched
+      const allMatched = cards.every(c => c.matched);
+      if (allMatched) {
+        let message = '';
+        if (scores[1] > scores[2]) {
+          message = '🎉 User 1 wins!';
+        } else if (scores[2] > scores[1]) {
+          message = '🎉 User 2 wins!';
+        } else {
+          message = '🤝 It\'s a draw!';
+        }
+        setTimeout(() => alert(message), 300);
+      }
     }
 
     function resetGame() {
