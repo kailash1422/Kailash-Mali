@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Shape Generator</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      background: #fff;
+      padding: 20px 24px;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      height: 100%;
+      /* max-width: 800px; */
+    }
+
+    h2 {
+      margin-bottom: 16px;
+      color: #333;
+      font-size: 20px;
+    }
+
+    .control-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .form-group label {
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: #555;
+    }
+
+    select,
+    input[type="number"] {
+      padding: 6px 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    svg {
+      margin-top: 20px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      height: 500px;
+      width: 100%;
+    }
+
+    @media (max-width: 500px) {
+      .control-row {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h2>🧩 Shape Generator</h2>
+
+    <div class="control-row">
+      <div class="form-group">
+        <label for="shape">Shape</label>
+        <select id="shape" onchange="updateForm()">
+          <option value="Rectangle">Rectangle</option>
+          <option value="Square">Square</option>
+          <option value="Circle">Circle</option>
+          <option value="Ellipse">Ellipse</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="unit">Unit</label>
+        <select id="unit" onchange="drawShape()">
+          <option value="cm">cm</option>
+          <option value="inch">inch</option>
+          <option value="feet">feet</option>
+        </select>
+      </div>
+
+      <div class="control-row" id="inputs" style="flex: 2; gap: 12px;"></div>
+    </div>
+
+    <svg id="shapePreview"></svg>
+  </div>
+
+  <script>
+    const unitToPx = {
+      cm: 37.8,
+      inch: 96,
+      feet: 1152
+    };
+
+    const dimensions = {
+      width: 5,
+      height: 5,
+      radius: 2,
+      rx: 3,
+      ry: 2
+    };
+
+    function getUnit() {
+      const unit = document.getElementById("unit").value;
+      return unitToPx[unit] || 1;
+    }
+
+    function updateForm() {
+      const shape = document.getElementById("shape").value;
+      const inputsDiv = document.getElementById("inputs");
+      inputsDiv.innerHTML = "";
+
+      const createInput = (label, name, value) => {
+        const div = document.createElement("div");
+        div.className = "form-group";
+        div.innerHTML = `
+          <label>${label}</label>
+          <input type="number" id="${name}" value="${value}" oninput="updateDimensions('${name}', this.value); drawShape()" />
+        `;
+        inputsDiv.appendChild(div);
+      };
+
+      if (shape === "Rectangle") {
+        createInput("Width", "width", dimensions.width);
+        createInput("Height", "height", dimensions.height);
+      } else if (shape === "Square") {
+        createInput("Width", "width", dimensions.width);
+      } else if (shape === "Circle") {
+        createInput("Radius", "radius", dimensions.radius);
+      } else if (shape === "Ellipse") {
+        createInput("Rx", "rx", dimensions.rx);
+        createInput("Ry", "ry", dimensions.ry);
+      }
+
+      drawShape();
+    }
+
+    function updateDimensions(name, value) {
+      dimensions[name] = parseFloat(value) || 0;
+    }
+
+    function drawShape() {
+      const shape = document.getElementById("shape").value;
+      const svg = document.getElementById("shapePreview");
+      const unit = getUnit();
+
+      svg.innerHTML = "";
+
+      if (shape === "Rectangle") {
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", 10);
+        rect.setAttribute("y", 10);
+        rect.setAttribute("width", dimensions.width * unit);
+        rect.setAttribute("height", dimensions.height * unit);
+        rect.setAttribute("fill", "#1976d2");
+        svg.appendChild(rect);
+      } else if (shape === "Square") {
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", 10);
+        rect.setAttribute("y", 10);
+        rect.setAttribute("width", dimensions.width * unit);
+        rect.setAttribute("height", dimensions.width * unit);
+        rect.setAttribute("fill", "#ff9800");
+        svg.appendChild(rect);
+      } else if (shape === "Circle") {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        const r = dimensions.radius * unit;
+        circle.setAttribute("cx", r + 10);
+        circle.setAttribute("cy", r + 10);
+        circle.setAttribute("r", r);
+        circle.setAttribute("fill", "#e91e63");
+        svg.appendChild(circle);
+      } else if (shape === "Ellipse") {
+        const ellipse = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+        ellipse.setAttribute("cx", dimensions.rx * unit + 10);
+        ellipse.setAttribute("cy", dimensions.ry * unit + 10);
+        ellipse.setAttribute("rx", dimensions.rx * unit);
+        ellipse.setAttribute("ry", dimensions.ry * unit);
+        ellipse.setAttribute("fill", "#4caf50");
+        svg.appendChild(ellipse);
+      }
+    }
+
+    window.onload = updateForm;
+  </script>
+
+</body>
+
+</html>
